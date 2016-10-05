@@ -15,6 +15,6 @@ node /user\d*\.clamps\d\.scaling\.puppetconf\.com/ {
 
 node /clamps\d\.scaling\.puppetconf\.com/ {
   class { 'clamps::agent':
-    nonroot_users => 10,
+    nonroot_users => 50,
   }
 }
