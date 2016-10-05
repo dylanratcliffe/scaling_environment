@@ -9,7 +9,7 @@ node 'master.scaling.puppetconf.com' {
   }
 }
 
-node /user\d*\.clamps\d\.scaling\.puppetconf\.com/ {
+node /user\d*-clamps\d\.scaling\.puppetconf\.com/ {
   include clamps
 }
 
