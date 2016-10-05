@@ -1,7 +1,7 @@
 include epel
 
 node /clamps\d\.scaling\.puppetconf\.com/ {
-  class { 'clamps::agent'
+  class { 'clamps::agent':
     nonroot_users => 10,
   }
 }
