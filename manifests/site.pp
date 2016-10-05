@@ -1,11 +1,5 @@
 include epel
 
-node /clamps\d\.scaling\.puppetconf\.com/ {
-  class { 'clamps::agent':
-    nonroot_users => 10,
-  }
-}
-
 node 'master.scaling.puppetconf.com' {
   include clamps::master
 
@@ -17,4 +11,10 @@ node 'master.scaling.puppetconf.com' {
 
 node /user\d*\.clamps\d\.scaling\.puppetconf\.com/ {
   include clamps
+}
+
+node /clamps\d\.scaling\.puppetconf\.com/ {
+  class { 'clamps::agent':
+    nonroot_users => 10,
+  }
 }
