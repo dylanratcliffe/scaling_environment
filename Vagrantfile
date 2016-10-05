@@ -52,6 +52,8 @@ Vagrant.configure("2") do |config|
     end
 
     # Add a provisioner to do a manual code deploy
+    agent.vm.provision "shell",
+      path: 'scripts/manual_code_deploy.sh'
   end
 
   (1..3).each do |num|
