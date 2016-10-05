@@ -1,10 +1,11 @@
 require 'vagrant-openstack-provider'
+require 'pry'
 
 Vagrant.configure("2") do |config|
   config.vm.box = "openstack"
 
   config.pe_build.version = '2016.2.1'
-  config.pe_build.download_root = "https://s3.amazonaws.com/pe-builds/released/2016.2.1/puppet-enterprise-2016.2.1-el-7-x86_64.tar.gz"
+  config.pe_build.download_root = "https://s3.amazonaws.com/pe-builds/released/2016.2.1"
   config.pe_build.shared_installer = false
 
   # Make sure the private key from the key pair is provided
@@ -12,9 +13,9 @@ Vagrant.configure("2") do |config|
 
   config.vm.synced_folder ".", "/vagrant", disabled: true
 
-  # config.hostmanager.enabled      = true
-  # config.hostmanager.manage_host  = true
-  # config.hostmanager.manage_guest = true
+  config.hostmanager.enabled      = true
+  config.hostmanager.manage_host  = false
+  config.hostmanager.manage_guest = true
 
   config.vm.provider :openstack do |os|
     os.openstack_auth_url = "#{ENV['OS_AUTH_URL']}/tokens"
@@ -36,21 +37,35 @@ Vagrant.configure("2") do |config|
     end
     agent.ssh.username = 'centos'
 
+    agent.vm.provision "shell", # Set the hostname correctly
+      inline: "hostnamectl set-hostname master.scaling.puppetconf.com"
+
+    agent.vm.provision "shell", # Add loopback for hostname because slice freaks out otherwise
+      inline: "sed -i '1 i\\127.0.0.1 master.scaling.puppetconf.com' /etc/hosts"
     agent.vm.provision :pe_bootstrap do |p|
       p.role          = :master
       p.answer_extras = [
+        '"puppet_enterprise::puppet_master_host": "master.scaling.puppetconf.com"',
         '"puppet_enterprise::profile::master::code_manager_auto_configure": true',
-        '"puppet_enterprise::profile::master::r10k_remote:" "https://github.com/dylanratcliffe/scaling_environment.git"'
+        '"puppet_enterprise::profile::master::r10k_remote": "https://github.com/dylanratcliffe/scaling_environment.git"'
       ]
     end
+
+    # Add a provisioner to do a manual code deploy
   end
 
-  config.vm.define "clamps1.scaling.puppetconf.com" do |agent|
-    agent.vm.provider :openstack do |os|
-      os.image  = 'centos_7_x86_64'
+  (1..3).each do |num|
+    config.vm.define "clamps#{num}.scaling.puppetconf.com" do |agent|
+      agent.vm.provider :openstack do |os|
+        os.image  = 'centos_7_x86_64'
+      end
+      agent.ssh.username = 'centos'
+      agent.vm.provision "shell", # Set the hostname correctly
+        inline: "hostnamectl set-hostname clamps#{num}.scaling.puppetconf.com"
+      agent.vm.provision :pe_agent do |a|
+        a.master_vm = "master.scaling.puppetconf.com"
+      end
     end
-    agent.ssh.username = 'centos'
-    agent.vm.provision :pe_bootstrap
   end
 
 end
